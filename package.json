@@ -1,0 +1,23 @@
+{
+  "name": "kingbot",
+  "version": "1.0.0",
+  "description": "A feature-rich WhatsApp bot with leveling, RPG, and economy systems",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": ["whatsapp", "bot", "baileys"],
+  "author": "thebestmikeboy-ai",
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.0.0",
+    "mongoose": "^7.0.0",
+    "dotenv": "^16.0.0",
+    "chalk": "^4.1.2",
+    "moment": "^2.29.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.0"
+  }
+}
