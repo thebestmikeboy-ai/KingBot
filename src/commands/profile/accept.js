@@ -1,52 +1,49 @@
 const User = require('../../models/User');
+const logger = require('../../utils/logger');
 
 module.exports = {
   name: 'accept',
-  aliases: [],
-  description: 'Akzeptiere die Nutzungsrichtlinien',
+  aliases: ['acceptdsgvo', 'agreerichtlinien'],
+  description: 'Akzeptiere die Richtlinien',
   category: 'profile',
-  
+
   async execute({ sock, message, args, prefix }) {
     try {
       const sender = message.key.participant || message.key.remoteJid;
       const from = message.key.remoteJid;
       const isGroup = from?.endsWith('@g.us');
-      
+
       if (isGroup) {
         return await sock.sendMessage(from, {
-          text: `❌ Dies funktioniert nur im Privatchat!`,
+          text: `❌ Dies muss im Bot-Privatchat erfolgen!`,
         });
       }
-      
-      // Check ob schon akzeptiert
-      const user = await User.findOne({ phoneNumber: sender });
-      if (user && user.termsAccepted) {
-        return await sock.sendMessage(from, {
-          text: `✅ Du hast die Richtlinien bereits akzeptiert!\n\nNutze ${prefix}register um dich anzumelden.`,
-        });
+
+      const existingUser = await User.findOne({ phoneNumber: sender });
+
+      if (existingUser) {
+        if (existingUser.dsgvoAccepted) {
+          return await sock.sendMessage(from, {
+            text: `✅ Du hast die Richtlinien bereits akzeptiert!\n\nRegistriere dich mit ${prefix}register [username] [tt.mm.jjjj]`,
+          });
+        }
       }
-      
-      // User aktualisieren oder erstellen
-      if (user) {
-        user.termsAccepted = true;
-        user.termsAcceptedDate = new Date();
-        await user.save();
-      } else {
-        const newUser = new User({
-          phoneNumber: sender,
-          termsAccepted: true,
-          termsAcceptedDate: new Date(),
-          gdprAccepted: true,
-          gdprAcceptedDate: new Date(),
-        });
-        await newUser.save();
-      }
-      
+
+      // Speichere Akzeptanz
+      const user = existingUser || new User({ phoneNumber: sender });
+      user.dsgvoAccepted = true;
+      user.dsgvoAcceptedDate = new Date();
+      await user.save();
+
+      const acceptText = `
+✅ DSGVO akzeptiert!\n\nJetzt kannst du dich registrieren!\n\n${prefix}register [username] [tt.mm.jjjj]\n\nBeispiel: ${prefix}register Max 15.03.1990
+      `;
+
       return await sock.sendMessage(from, {
-        text: `✅ Danke! Du hast die Richtlinien akzeptiert.\n\nJetzt kannst du dich mit ${prefix}register anmelden!`,
+        text: acceptText,
       });
     } catch (error) {
-      console.error(error);
+      logger.error(`Fehler in accept command: ${error.message}`);
     }
   },
 };

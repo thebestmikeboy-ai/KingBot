@@ -1,46 +1,46 @@
+const User = require('../../models/User');
+const logger = require('../../utils/logger');
+
 module.exports = {
   name: 'dsgvo',
-  aliases: [],
-  description: 'Zeige die DSGVO Richtlinien',
+  aliases: ['gdpr', 'datenschutz'],
+  description: 'Zeige DSGVO Richtlinien',
   category: 'profile',
-  
+
   async execute({ sock, message, args, prefix }) {
     try {
       const from = message.key.remoteJid;
-      
+      const isGroup = from?.endsWith('@g.us');
+
+      if (isGroup) {
+        return await sock.sendMessage(from, {
+          text: `❌ DSGVO muss im Bot-Privatchat akzeptiert werden!`,
+        });
+      }
+
       const dsgvoText = `
-╔═══════════════════════════════════╗
-║  📜 DSGVO & NUTZUNGSRICHTLINIEN  ║
-╚═══════════════════════════════════╝
+📄 **DATENSCHUTZERKLÄRUNG (DSGVO)**
 
-🔒 **Datenschutz:**
-Wir speichern deine Daten nach DSGVO Standards. Deine Telefonnummer wird verschlüsselt gespeichert und nicht an Dritte weitergegeben.
+Wir speichern folgende Daten:
+• Telefonnummer (zur Identifikation)
+• Benutzername (frei wählbar)
+• Geburtsdatum (optional)
+• Spielstatistiken (Level, XP, Geld)
+• Freundesliste & Beziehungen
+• Charakter-Daten (RPG)
 
-📱 **Gespeicherte Daten:**
-- Telefonnummer (Identifikation)
-- Benutzername
-- Geburtsdatum
-- Profileinformationen
-- Spielstatistiken
+Deine Daten sind sicher und werden nicht an Dritte weitergegeben.
 
-🛡️ **Deine Rechte:**
-- Recht auf Einsicht (${prefix}mydata)
-- Recht auf Löschung (${prefix}forgetme)
-- Recht auf Widerspruch
-- Recht auf Datenportabilität
+Du kannst deine Daten jederzeit mit ${prefix}forgetme löschen!
 
-⚠️ **Wichtig:**
-Durch die Nutzung dieses Bots akzeptierst du, dass deine Daten gespeichert und verarbeitet werden.
-
-✅ Um fortzufahren, nutze:
-${prefix}accept
+Akzeptierst du? ${prefix}accept
       `;
-      
+
       return await sock.sendMessage(from, {
         text: dsgvoText,
       });
     } catch (error) {
-      console.error(error);
+      logger.error(`Fehler in dsgvo command: ${error.message}`);
     }
   },
 };

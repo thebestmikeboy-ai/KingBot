@@ -1,10 +1,11 @@
 const User = require('../../models/User');
+const RPGCharacter = require('../../models/RPGCharacter');
 const logger = require('../../utils/logger');
 
 module.exports = {
   name: 'level',
-  aliases: ['lvl', 'rank'],
-  description: 'Zeige dein Level und XP',
+  aliases: ['lvl', 'mylevel'],
+  description: 'Zeige dein Level & XP',
   category: 'profile',
 
   async execute({ sock, message, args, prefix }) {
@@ -14,33 +15,29 @@ module.exports = {
 
       const user = await User.findOne({ phoneNumber: sender });
 
-      if (!user) {
+      if (!user || !user.registered) {
         return await sock.sendMessage(from, {
           text: `❌ Du bist nicht registriert!`,
         });
       }
 
-      // XP zum nächsten Level berechnen (vereinfacht: 100 XP pro Level)
-      const xpPerLevel = 100;
-      const currentLevelXp = user.xp % xpPerLevel;
-      const xpProgress = (currentLevelXp / xpPerLevel) * 100;
-      const xpBar = createBar(currentLevelXp, xpPerLevel, 20);
+      const xpPerLevel = 1000;
+      const currentXP = user.xp % xpPerLevel;
+      const xpPercentage = Math.floor((currentXP / xpPerLevel) * 100);
+      const xpBar = '▏'.repeat(Math.floor(xpPercentage / 10)) + '░'.repeat(10 - Math.floor(xpPercentage / 10));
 
       const levelText = `
-╔════════════════════════════════════╗
-║  📊 LEVEL & XP - ${user.username}
-╠════════════════════════════════════╣
-║
-║ 🎯 Level: ${user.level}
-║ 🏅 Liga: ${user.league} ${user.leagueTier}
-║
-║ ⭐ XP: ${user.xp} / ${xpPerLevel * user.level}
-║ ${xpBar}
-║ ${xpProgress.toFixed(1)}%
-║
-║ 📈 XP zum nächsten Level: ${xpPerLevel - currentLevelXp}
-║
-╚════════════════════════════════════╝
+╔═══════════════════════════════════════╗
+║  🎯 LEVEL & XP - ${user.username.padEnd(20)}║
+╠═══════════════════════════════════════╣
+║                                        ║
+║ 🎯 Level: ${String(user.level).padEnd(32)}║
+║ ⭐ Gesamt XP: ${String(user.xp).padEnd(30)}║
+║                                        ║
+║ XP zum nächsten Level: ${currentXP}/${xpPerLevel}       ║
+║ ${xpBar} ${xpPercentage}%             ║
+║                                        ║
+╚═══════════════════════════════════════╝
       `;
 
       return await sock.sendMessage(from, {
@@ -48,15 +45,6 @@ module.exports = {
       });
     } catch (error) {
       logger.error(`Fehler in level command: ${error.message}`);
-      return await sock.sendMessage(message.key.remoteJid, {
-        text: `❌ Ein Fehler ist aufgetreten!`,
-      });
     }
   },
 };
-
-function createBar(current, max, length) {
-  const filled = Math.floor((current / max) * length);
-  const empty = length - filled;
-  return `[${"█".repeat(filled)}${"░".repeat(empty)}]`;
-}
